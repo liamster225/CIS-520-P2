@@ -34,6 +34,114 @@ class GradeEnvironment : public testing::Environment
         }
 };
 
+// first_come_first_serve TEST 1: Ensure the function returns false when either ready_queue or result is NULL
+TEST(first_come_first_serve, NullPointers) {
+    dyn_array_t* ready_queue = NULL; //Create A null ready queue
+    ScheduleResult_t* result = (ScheduleResult_t*)malloc(sizeof(ScheduleResult_t)); // Allocate memory for result
+    ASSERT_EQ(false, first_come_first_serve(ready_queue, result));
+    free(result);
+}
+
+
+
+TEST(first_come_first_serve, NullResult) {
+    dyn_array_t* ready_queue = dyn_array_create(1, sizeof(ProcessControlBlock_t), NULL); // Create a queue for ProcessControlBlock_t elements
+    
+    // Allocate memory for pcb1
+    ProcessControlBlock_t* pcb1 = (ProcessControlBlock_t*)malloc(sizeof(ProcessControlBlock_t));
+    if (pcb1 == NULL) {
+        // Handle allocation failure if needed
+        // For simplicity, exiting the test case here
+        dyn_array_destroy(ready_queue);
+        return;
+    }
+    
+    // Initialize pcb1 members
+    pcb1->remaining_burst_time = 5;
+    pcb1->arrival = 0;
+    pcb1->priority = 0; 
+    pcb1->started = false; 
+
+    // Push pcb1 onto the queue
+    dyn_array_push_back(ready_queue, pcb1);
+
+    // Create null result
+    ScheduleResult_t* result = NULL;
+
+    // Call the function under test
+    ASSERT_EQ(false, first_come_first_serve(ready_queue, result));
+
+    // Free the dynamically allocated memory for pcb1
+    free(pcb1);
+
+    // Destroy the queue
+    dyn_array_destroy(ready_queue);
+
+}
+
+
+
+// first_come_first_serve TEST 2: Ensure the function returns false when the ready_queue is empty
+TEST(first_come_first_serve, EmptyQueue) {
+    dyn_array_t* ready_queue =  dyn_array_create(1, sizeof(ProcessControlBlock_t), NULL);;
+    ScheduleResult_t result;
+    ASSERT_EQ(false, first_come_first_serve(ready_queue, &result));
+    
+    free(ready_queue);
+}
+
+
+// Test case for first_come_first_serve
+TEST(first_come_first_serve, NonEmptyQueue) {
+    dyn_array_t* ready_queue = dyn_array_create(3, sizeof(ProcessControlBlock_t), NULL);
+    if (ready_queue == NULL) {
+        FAIL() << "Failed to create dyn_array";
+    }
+
+    // Initialize and push PCBs
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 5, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 3, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb3 = { .remaining_burst_time = 7, .priority = 0, .arrival = 0, .started = false };
+    dyn_array_push_back(ready_queue, &pcb1);
+    dyn_array_push_back(ready_queue, &pcb2);
+    dyn_array_push_back(ready_queue, &pcb3);
+
+    // Create result variable
+    ScheduleResult_t result;
+    ASSERT_TRUE(first_come_first_serve(ready_queue, &result));
+
+    // Test the calculated statistics
+    ASSERT_NEAR(4.33, result.average_waiting_time, 0.01);
+    ASSERT_NEAR(12.33, result.average_turnaround_time, 0.01);
+    ASSERT_EQ(28u, result.total_run_time);
+
+    dyn_array_destroy(ready_queue);
+}
+
+// Test case for first_come_first_serve
+TEST(first_come_first_serve, FirstProcessedFirst) {
+    dyn_array_t* ready_queue = dyn_array_create(2, sizeof(ProcessControlBlock_t), NULL);
+    if (ready_queue == NULL) {
+        FAIL() << "Failed to create dyn_array";
+    }
+
+    // Initialize PCBs
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 5, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 3, .priority = 0, .arrival = 0, .started = false };
+
+    // Push PCBs onto the array
+    dyn_array_push_back(ready_queue, &pcb1);
+    dyn_array_push_back(ready_queue, &pcb2);
+
+    // Create result variable
+    ScheduleResult_t result;
+    ASSERT_TRUE(first_come_first_serve(ready_queue, &result));
+
+    // After processing, the first process should have remaining burst time 0
+    ASSERT_EQ(0u, pcb1.remaining_burst_time);
+
+    dyn_array_destroy(ready_queue);
+}
 
 int main(int argc, char **argv) 
 {
