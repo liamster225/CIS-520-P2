@@ -21,7 +21,7 @@ void virtual_cpu(ProcessControlBlock_t *process_control_block)
 bool first_come_first_serve(dyn_array_t *ready_queue, ScheduleResult_t *result) 
 {
     //If input parameters are incorrect output is false
-    if(ready_queue == NULL || result == NULL){
+    if(ready_queue == NULL || result == NULL || dyn_array_empty(ready_queue)){
         return false;
     }
 
@@ -31,17 +31,28 @@ bool first_come_first_serve(dyn_array_t *ready_queue, ScheduleResult_t *result)
     unsigned long total_run_time = 0;
 
     // Itterate over the entire size of the queue and proccess in a FIFO order
-    for(size_t i = 0; i < ready_queue->size; i++){
-        ProcessControlBlock_t* pcb = (ProcessControlBlock_t*)((char*)ready_queue->array + i * ready_queue->data_size);
+    for(size_t i = 0; i < dyn_array_size(ready_queue); i++){
+        ProcessControlBlock_t* pcb = dyn_array_at(ready_queue, 1);
 
-        // Calculate runtime analysis
-        total_waiting_time += total_run_time - pcb->arrival;
-        total_turnaround_time += total_run_time + pcb->remaining_burst_time - pcb->arrival;
-        total_run_time += pcb->remaining_burst_time;
+        //Calculate the waiting time for this proccess and add it to the total waiting time
+        float waiting_time = total_run_time - pcb->arrival;
+        total_waiting_time += waiting_time;
+
+        // calculate this PCB's turnaround time prior to proccessing the command
+        float turnaround_time = waiting_time + pcb->remaining_burst_time;
+
+        // Perform the execution of the command in the PCB
+        while(pcb->remaining_burst_time > 0){
+            total_run_time++;
+            virtual_cpu(pcb);
+        }
+
+        // update total turnaround
+        total_turnaround_time += turnaround_time;
     }
     // calculate the average times for the result
-    result->average_waiting_time = total_waiting_time / ready_queue->size;
-    result->average_turnaround_time = total_turnaround_time / ready_queue->size;
+    result->average_waiting_time = total_waiting_time / dyn_array_size(ready_queue);
+    result->average_turnaround_time = total_turnaround_time / dyn_array_size(ready_queue);
     result->total_run_time = total_run_time;
 
     return true;
