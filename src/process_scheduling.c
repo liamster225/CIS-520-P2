@@ -32,7 +32,7 @@ bool first_come_first_serve(dyn_array_t *ready_queue, ScheduleResult_t *result)
 
     // Itterate over the entire size of the queue and proccess in a FIFO order
     for(size_t i = 0; i < dyn_array_size(ready_queue); i++){
-        ProcessControlBlock_t* pcb = dyn_array_at(ready_queue, 1);
+        ProcessControlBlock_t* pcb = dyn_array_at(ready_queue, i);
 
         //Calculate the waiting time for this proccess and add it to the total waiting time
         float waiting_time = total_run_time - pcb->arrival;
