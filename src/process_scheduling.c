@@ -58,11 +58,55 @@ bool first_come_first_serve(dyn_array_t *ready_queue, ScheduleResult_t *result)
     return true;
 }
 
+// Comparison function for sorting based on remaining burst time
+int compare_remaining_burst_time(const void *a, const void *b) {
+    ProcessControlBlock_t *pcb_a = *((ProcessControlBlock_t **)a);
+    ProcessControlBlock_t *pcb_b = *((ProcessControlBlock_t **)b);
+    return (pcb_a->remaining_burst_time > pcb_b->remaining_burst_time) - (pcb_a->remaining_burst_time < pcb_b->remaining_burst_time);
+}
+
 bool shortest_job_first(dyn_array_t *ready_queue, ScheduleResult_t *result) 
 {
-    UNUSED(ready_queue);
-    UNUSED(result);
-    return false;   
+    // If input parameters are incorrect output is false
+    if (ready_queue == NULL || result == NULL || dyn_array_empty(ready_queue)) {
+        return false;
+    }
+
+    // Sort the ready queue based on remaining burst time (SJF)
+    dyn_array_sort(ready_queue, compare_remaining_burst_time);
+
+    // Variables for time analysis
+    float total_waiting_time = 0;
+    float total_turnaround_time = 0;
+    unsigned long total_run_time = 0;
+
+    // Iterate over the entire size of the queue and process in SJF order
+    for (size_t i = 0; i < dyn_array_size(ready_queue); i++) {
+        ProcessControlBlock_t *pcb = dyn_array_at(ready_queue, i);
+
+        // Calculate the waiting time for this process and add it to the total waiting time
+        float waiting_time = total_run_time - pcb->arrival;
+        total_waiting_time += waiting_time;
+
+        // Calculate this PCB's turnaround time prior to processing the command
+        float turnaround_time = waiting_time + pcb->remaining_burst_time;
+
+        // Perform the execution of the command in the PCB
+        while (pcb->remaining_burst_time > 0) {
+            total_run_time++;
+            virtual_cpu(pcb);
+        }
+
+        // Update total turnaround
+        total_turnaround_time += turnaround_time;
+    }
+
+    // Calculate the average times for the result
+    result->average_waiting_time = total_waiting_time / dyn_array_size(ready_queue);
+    result->average_turnaround_time = total_turnaround_time / dyn_array_size(ready_queue);
+    result->total_run_time = total_run_time;
+
+    return true;
 }
 
 bool priority(dyn_array_t *ready_queue, ScheduleResult_t *result) 
@@ -103,7 +147,7 @@ bool shortest_remaining_time_first(dyn_array_t *ready_queue, ScheduleResult_t *r
     unsigned long run_time = 0;
     unsigned long curr_run_time = 0;
 
-    dyn_array_sort(ready_queue, compare_burst_time);
+    dyn_array_sort(ready_queue, compare_remaining_burst_time);
   
     // For loop to go through the ready_queue
     for (size_t i = 0; i < dyn_array_size(ready_queue); ++i) {
