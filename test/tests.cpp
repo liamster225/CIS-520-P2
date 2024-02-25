@@ -304,6 +304,78 @@ TEST(load_process_control_blocks, LargeFile) {
     dyn_array_destroy(result);
 }
 
+//Null ready queue for shortest job first
+TEST(shortest_remaining_time_first, NullPointers) {
+    dyn_array_t* ready_queue = NULL; //Create A null ready queue
+    ScheduleResult_t* result = (ScheduleResult_t*)malloc(sizeof(ScheduleResult_t)); // Allocate memory for result
+    ASSERT_EQ(false, shortest_remaining_time_first(ready_queue, result));
+    free(result);
+}
+
+
+
+
+// first_come_first_serve TEST 2: Ensure the function returns false when the ready_queue is empty
+TEST(shortest_remaining_time_first, EmptyQueue) {
+    dyn_array_t* ready_queue =  dyn_array_create(1, sizeof(ProcessControlBlock_t), NULL);;
+    ScheduleResult_t result;
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 5, .priority = 0, .arrival = 0, .started = false };
+    dyn_array_push_back(ready_queue,&pcb1);
+    ASSERT_EQ(false, first_come_first_serve(ready_queue, &result));
+    
+    free(ready_queue);
+}
+
+// Test case for a non-empty ready queue with multiple processes
+TEST(shortest_remaining_time_first, NonEmptyQueue) {
+    dyn_array_t* ready_queue = dyn_array_create(5, sizeof(ProcessControlBlock_t), NULL);
+    ScheduleResult_t result;
+
+    // Creating and adding processes to the ready queue
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 5, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 3, .priority = 1, .arrival = 1, .started = false };
+    ProcessControlBlock_t pcb3 = { .remaining_burst_time = 7, .priority = 2, .arrival = 2, .started = false };
+
+    dyn_array_push_back(ready_queue, &pcb1);
+    dyn_array_push_back(ready_queue, &pcb2);
+    dyn_array_push_back(ready_queue, &pcb3);
+
+    // Running the shortest_remaining_time_first algorithm
+    ASSERT_EQ(true, shortest_remaining_time_first(ready_queue, &result));
+
+    // Validating the results
+    ASSERT_EQ(5.0f, result.average_waiting_time); // Waiting time is sum of run times = 0+3+8 = 11 / 3 = 3.666...
+    ASSERT_FLOAT_EQ(5.6666665f, result.average_turnaround_time); // Turnaround time is sum of burst times = 5+3+7 = 15 / 3 = 5.0
+    ASSERT_EQ(15ul, result.total_run_time); // Total run time is sum of burst times = 5+3+7 = 15
+
+    free(ready_queue);
+}
+
+// Test case for processes with varying burst times
+TEST(shortest_remaining_time_first, VaryingBurstTimes) {
+    dyn_array_t* ready_queue = dyn_array_create(3, sizeof(ProcessControlBlock_t), NULL);
+    ScheduleResult_t result;
+
+    // Creating and adding processes to the ready queue with varying burst times
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 8, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 2, .priority = 1, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb3 = { .remaining_burst_time = 5, .priority = 2, .arrival = 0, .started = false };
+
+    dyn_array_push_back(ready_queue, &pcb1);
+    dyn_array_push_back(ready_queue, &pcb2);
+    dyn_array_push_back(ready_queue, &pcb3);
+
+    // Running the shortest_remaining_time_first algorithm
+    ASSERT_EQ(true, shortest_remaining_time_first(ready_queue, &result));
+
+    // Validating the results
+    ASSERT_EQ(5.0f, result.average_waiting_time); // Waiting time is sum of run times = 0+8+3 = 11 / 3 = 3.666...
+    ASSERT_FLOAT_EQ(5.0f, result.average_turnaround_time); // Turnaround time is sum of burst times = 8+2+5 = 15 / 3 = 5.0
+    ASSERT_EQ(15ul, result.total_run_time); // Total run time is sum of burst times = 8+2+5 = 15
+
+    free(ready_queue);
+}
+
 int main(int argc, char **argv) 
 {
     ::testing::InitGoogleTest(&argc, argv);

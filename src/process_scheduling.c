@@ -86,9 +86,60 @@ dyn_array_t *load_process_control_blocks(const char *input_file)
     return NULL;
 }
 
+// Runs the Shortest Remaining Time First Process Scheduling algorithm over the incoming ready_queue
+// \param ready queue a dyn_array of type ProcessControlBlock_t that contain be up to N elements
+// \param result used for shortest job first stat tracking \ref ScheduleResult_t
+// \return true if function ran successful else false for an error
 bool shortest_remaining_time_first(dyn_array_t *ready_queue, ScheduleResult_t *result) 
 {
-    UNUSED(ready_queue);
-    UNUSED(result);
-    return false;
+   if(ready_queue == NULL || result == NULL || dyn_array_size(ready_queue) == 0)
+    {
+        return false;
+    }
+
+    // Variables to calculate statistics
+    float waiting_time = 0;
+    float turnaround_time = 0;
+    unsigned long run_time = 0;
+    unsigned long curr_run_time = 0;
+
+    dyn_array_sort(ready_queue, compare_burst_time);
+  
+    // For loop to go through the ready_queue
+    for (size_t i = 0; i < dyn_array_size(ready_queue); ++i) {
+        // Use dyn_array_at the current index to get the current PCB
+        ProcessControlBlock_t *pcb = dyn_array_at(ready_queue, i);
+
+        // Make sure that the PCB is not null
+        if (pcb == NULL) {
+            return false; // PCB is null, therefore unsuccessful
+        }
+
+        // Calculate waiting time for the current process
+        waiting_time += run_time;
+
+        // Simulate processing on virtual CPU until the process is executed
+        while (pcb->remaining_burst_time > 0) {
+            virtual_cpu(pcb);
+            ++curr_run_time;
+        }
+
+        // Calculate turnaround time for the current process
+        turnaround_time += curr_run_time;
+
+        run_time += curr_run_time;
+
+        curr_run_time = 0;
+    }
+    
+    // Set the average waiting time
+    result->average_waiting_time = waiting_time / dyn_array_size(ready_queue);
+
+    // Set the average turnaround time
+    result->average_turnaround_time = turnaround_time / dyn_array_size(ready_queue);
+
+    // Set the total run time
+    result->total_run_time = run_time;
+
+    return true;   
 }
