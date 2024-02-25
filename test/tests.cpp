@@ -429,21 +429,21 @@ TEST(shortest_job_first, VaryingBurstTimes) {
     ScheduleResult_t result;
 
     // Creating and adding processes to the ready queue with varying burst times
-    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 8, .priority = 0, .arrival = 0, .started = false };
-    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 2, .priority = 1, .arrival = 0, .started = false };
-    ProcessControlBlock_t pcb3 = { .remaining_burst_time = 5, .priority = 2, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb1 = { .remaining_burst_time = 11, .priority = 0, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb2 = { .remaining_burst_time = 3, .priority = 1, .arrival = 0, .started = false };
+    ProcessControlBlock_t pcb3 = { .remaining_burst_time = 9, .priority = 2, .arrival = 0, .started = false };
 
     dyn_array_push_back(ready_queue, &pcb1);
     dyn_array_push_back(ready_queue, &pcb2);
     dyn_array_push_back(ready_queue, &pcb3);
 
     // Running the shortest_remaining_time_first algorithm
-    ASSERT_EQ(true, shortest_remaining_time_first(ready_queue, &result));
+    ASSERT_EQ(true, shortest_job_first(ready_queue, &result));
 
     // Validating the results
-    ASSERT_EQ(5.0f, result.average_waiting_time); // Waiting time is sum of run times = 0+8+3 = 11 / 3 = 3.666...
-    ASSERT_FLOAT_EQ(5.0f, result.average_turnaround_time); // Turnaround time is sum of burst times = 8+2+5 = 15 / 3 = 5.0
-    ASSERT_EQ(15ul, result.total_run_time); // Total run time is sum of burst times = 8+2+5 = 15
+    ASSERT_EQ(5.0f, result.average_waiting_time); // Waiting time is sum of run times = 0+3+12 = 15 / 3 = 5
+    ASSERT_FLOAT_EQ(7.666f, result.average_turnaround_time); // Turnaround time is sum of burst times = 11+3+9 = 23 / 3 = 7.666
+    ASSERT_EQ(23ul, result.total_run_time); // Total run time is sum of burst times = 11+3+9 = 23
 
     free(ready_queue);
 }
