@@ -130,6 +130,15 @@ dyn_array_t *load_process_control_blocks(const char *input_file)
     return NULL;
 }
 
+// Comparison function for sorting by shortest burst time
+int compare_burst_time(const void *a, const void *b) {
+    const ProcessControlBlock_t *pcb_a = *(const ProcessControlBlock_t **)a;
+    const ProcessControlBlock_t *pcb_b = *(const ProcessControlBlock_t **)b;
+
+    // Compare burst times
+    return pcb_a->remaining_burst_time - pcb_b->remaining_burst_time;
+}
+
 // Runs the Shortest Remaining Time First Process Scheduling algorithm over the incoming ready_queue
 // \param ready queue a dyn_array of type ProcessControlBlock_t that contain be up to N elements
 // \param result used for shortest job first stat tracking \ref ScheduleResult_t
